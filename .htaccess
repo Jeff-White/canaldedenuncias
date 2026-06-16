@@ -1,0 +1,22 @@
+# Segurança - Canal de Denúncias
+
+# Desabilita listagem de diretórios (autoindex)
+Options -Indexes
+
+# Bloqueia acesso direto a código-fonte, dumps e arquivos de configuração
+<FilesMatch "\.(sql|md|json|log|psftp|sh|bat|ini|yml|yaml|lock|example|dist|cdr|eps|txt)$">
+    Require all denied
+</FilesMatch>
+
+# Bloqueia arquivos ocultos (.git, .env, .htpasswd, etc.)
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# Cabeçalhos de segurança
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>

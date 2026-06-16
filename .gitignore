@@ -1,0 +1,13 @@
+# Segredos de produção — NÃO versionar
+config/config.php
+
+# Uploads de evidências (dados de denunciantes)
+uploads/*
+!uploads/.htaccess
+
+# Scripts de transferência temporários (continham credenciais)
+*.psftp
+
+# Lixo de SO
+Thumbs.db
+.DS_Store
