@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS denuncias (
   id INT AUTO_INCREMENT PRIMARY KEY,
   protocolo VARCHAR(20) NOT NULL UNIQUE,   -- código gerado para o denunciante acompanhar (ex: DEN-2026-0001)
   empresa_id INT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   -- Etapa 1 - Identificação
   identificado ENUM('Sim','Não') NOT NULL,
