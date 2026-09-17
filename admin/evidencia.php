@@ -12,26 +12,42 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $row = $stmt->fetch();
 
-if (!$row || !$row['evidencia_path']) {
+if (!$row || empty($row['evidencia_path'])) {
     http_response_code(404);
     die('Arquivo não encontrado.');
 }
 
-$caminho = realpath(rtrim(UPLOAD_DIR, '/') . '/' . $row['evidencia_path']);
-$baseDir = realpath(UPLOAD_DIR);
+// Bloqueia qualquer caractere suspeito no caminho relativo
+if (preg_match('/\.\./', $row['evidencia_path'])) {
+    http_response_code(400);
+    die('Caminho de arquivo inválido.');
+}
 
-// Garante que o caminho final está dentro do diretório de uploads
+$baseDir = rtrim(realpath(UPLOAD_DIR), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+$caminho = realpath($baseDir . $row['evidencia_path']);
+
+// Garante que o caminho canônico reside estritamente dentro do diretório de uploads
 if (!$caminho || strpos($caminho, $baseDir) !== 0 || !is_file($caminho)) {
     http_response_code(404);
     die('Arquivo não encontrado.');
 }
 
-$mime = mime_content_type($caminho) ?: 'application/octet-stream';
+// Whitelist estrita de MIME types para exibição inline
+$finfo = new finfo(FILEINFO_MIME_TYPE);
+$mime = $finfo->file($caminho) ?: 'application/octet-stream';
+$mimesSegurosInline = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
+$nomeSeguro = preg_replace('/[^a-zA-Z0-9._-]/', '', basename($caminho));
+$disposition = in_array($mime, $mimesSegurosInline, true) ? 'inline' : 'attachment';
+
 header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: SAMEORIGIN');
+header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'");
 header('X-Robots-Tag: noindex, nofollow, noarchive, nosnippet, noimageindex');
 header('Cache-Control: private, no-cache, no-store, must-revalidate');
-header('Content-Type: ' . $mime);
+header('Content-Type: ' . ($disposition === 'inline' ? $mime : 'application/octet-stream'));
 header('Content-Length: ' . filesize($caminho));
-header('Content-Disposition: inline; filename="' . basename($caminho) . '"');
+header('Content-Disposition: ' . $disposition . '; filename="' . $nomeSeguro . '"');
+
 readfile($caminho);
 exit;

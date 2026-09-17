@@ -15,7 +15,7 @@ function erroSaida(array $empresa, string $mensagem) {
     http_response_code(422);
     echo '<!DOCTYPE html><html lang="pt-br"><head><meta charset="UTF-8"><title>Erro</title>';
     echo '<link rel="stylesheet" href="assets/css/style.css"></head><body><div class="container">';
-    echo '<div class="form-message erro">' . htmlspecialchars($mensagem) . '</div>';
+    echo '<div class="form-message erro">' . htmlspecialchars($mensagem, ENT_QUOTES, 'UTF-8') . '</div>';
     echo '<p><a href="index.php?empresa=' . urlencode($empresa['slug']) . '">Voltar ao formulário</a></p>';
     echo '</div></body></html>';
     exit;
@@ -26,7 +26,58 @@ if (!$empresa) {
     die('Empresa não identificada.');
 }
 
-// ---------- Validação server-side ----------
+// ---------- Proteção Anti-Spam: Honeypot & Timing Check ----------
+if (!empty($_POST['website_url'])) {
+    // Honeypot disparado: bot preencheu campo oculto. Finge sucesso sem salvar nada.
+    sleep(1);
+    header('Location: obrigado.php?protocolo=CONF-OK&empresa=' . urlencode($empresa['slug']));
+    exit;
+}
+
+$formTime = (int)($_POST['_form_time'] ?? 0);
+if ($formTime > 0 && (time() - $formTime) < 2) {
+    // Submissão instantânea desumana (< 2 segundos para 20 campos). Finge sucesso e descarta.
+    sleep(1);
+    header('Location: obrigado.php?protocolo=CONF-OK&empresa=' . urlencode($empresa['slug']));
+    exit;
+}
+
+// ---------- Identificação de IP e Rate Limiting Prévio ----------
+function capturarIpCliente(): string {
+    $candidatos = [
+        'HTTP_CF_CONNECTING_IP',
+        'HTTP_X_FORWARDED_FOR',
+        'HTTP_X_REAL_IP',
+        'HTTP_CLIENT_IP',
+        'REMOTE_ADDR'
+    ];
+    foreach ($candidatos as $c) {
+        if (!empty($_SERVER[$c])) {
+            $lista = explode(',', $_SERVER[$c]);
+            foreach ($lista as $ip) {
+                $ip = trim($ip);
+                if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                    return $ip;
+                }
+            }
+        }
+    }
+    return $_SERVER['REMOTE_ADDR'] ?? '';
+}
+
+$ipReal = capturarIpCliente();
+$ipHash = hash('sha256', ($ipReal ?: ($_SERVER['REMOTE_ADDR'] ?? '')) . date('Y-m-d'));
+
+// Proteção contra abuso/flooding (máx 15 submissões por hora pelo mesmo IP)
+$pdo = getDB();
+$stmtRL = $pdo->prepare("SELECT COUNT(*) AS total FROM denuncias WHERE ip_hash = :ip_hash AND created_at >= (NOW() - INTERVAL 1 HOUR)");
+$stmtRL->execute(['ip_hash' => $ipHash]);
+$enviosHora = (int)($stmtRL->fetch()['total'] ?? 0);
+if ($enviosHora >= 15) {
+    erroSaida($empresa, 'Muitas tentativas de envio a partir da sua rede. Por favor, aguarde alguns minutos antes de tentar novamente.');
+}
+
+// ---------- Validação server-side dos campos ----------
 function val(string $campo): string {
     return trim($_POST[$campo] ?? '');
 }
@@ -115,21 +166,31 @@ if (!empty($erros)) {
     erroSaida($empresa, implode(' ', $erros));
 }
 
-// ---------- Upload de evidência ----------
+// ---------- Upload seguro de evidência ----------
 $evidenciaPath = null;
 if (!empty($_FILES['evidencia']['name']) && $_FILES['evidencia']['error'] === UPLOAD_ERR_OK) {
-    $extensoesPermitidas = ['jpg', 'jpeg', 'png', 'gif'];
-    $extensao = strtolower(pathinfo($_FILES['evidencia']['name'], PATHINFO_EXTENSION));
-    $tamanhoMax = 5 * 1024 * 1024; // 5MB
+    $extensoesValidas = ['jpg' => 'jpg', 'jpeg' => 'jpg', 'png' => 'png', 'gif' => 'gif'];
+    $rawExt = strtolower(pathinfo($_FILES['evidencia']['name'], PATHINFO_EXTENSION));
 
-    if (!in_array($extensao, $extensoesPermitidas, true)) {
+    if (!isset($extensoesValidas[$rawExt])) {
         erroSaida($empresa, 'Formato de arquivo não permitido. Envie apenas JPG, JPEG, PNG ou GIF.');
     }
+    $extensao = $extensoesValidas[$rawExt];
+    $tamanhoMax = 5 * 1024 * 1024; // 5MB
+
     if ($_FILES['evidencia']['size'] > $tamanhoMax) {
         erroSaida($empresa, 'O arquivo de evidência excede o tamanho máximo de 5MB.');
     }
 
-    // Valida que o arquivo é realmente uma imagem (e não um script renomeado)
+    // Inspeção profunda de MIME types usando finfo
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mimeDetectado = $finfo->file($_FILES['evidencia']['tmp_name']);
+    $mimesPermitidos = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!in_array($mimeDetectado, $mimesPermitidos, true)) {
+        erroSaida($empresa, 'O arquivo enviado não possui formato de imagem autêntico.');
+    }
+
+    // Validação secundária via getimagesize
     $tiposImagem = [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_GIF];
     $infoImagem = @getimagesize($_FILES['evidencia']['tmp_name']);
     if ($infoImagem === false || !in_array($infoImagem[2], $tiposImagem, true)) {
@@ -151,29 +212,7 @@ if (!empty($_FILES['evidencia']['name']) && $_FILES['evidencia']['error'] === UP
     $evidenciaPath = $empresa['slug'] . '/' . $nomeArquivo;
 }
 
-// ---------- Captura e identificação de IP e Máquina ----------
-function capturarIpCliente(): string {
-    $candidatos = [
-        'HTTP_CF_CONNECTING_IP',
-        'HTTP_X_FORWARDED_FOR',
-        'HTTP_X_REAL_IP',
-        'HTTP_CLIENT_IP',
-        'REMOTE_ADDR'
-    ];
-    foreach ($candidatos as $c) {
-        if (!empty($_SERVER[$c])) {
-            $lista = explode(',', $_SERVER[$c]);
-            foreach ($lista as $ip) {
-                $ip = trim($ip);
-                if (filter_var($ip, FILTER_VALIDATE_IP)) {
-                    return $ip;
-                }
-            }
-        }
-    }
-    return $_SERVER['REMOTE_ADDR'] ?? '';
-}
-
+// ---------- Captura e telemetria do dispositivo ----------
 function identificarDispositivo(string $ua): array {
     $os = 'Desconhecido';
     $navegador = 'Desconhecido';
@@ -212,7 +251,6 @@ function identificarDispositivo(string $ua): array {
     return ['os' => $os, 'navegador' => $navegador, 'tipo' => $tipo];
 }
 
-$ipReal = capturarIpCliente();
 $userAgent = trim($_SERVER['HTTP_USER_AGENT'] ?? '');
 $parsedDisp = identificarDispositivo($userAgent);
 $reverseHost = $ipReal ? @gethostbyaddr($ipReal) : '';
@@ -240,11 +278,7 @@ $infoDispositivo = [
 $dispositivoInfoJson = json_encode($infoDispositivo, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
 // ---------- Gravação no banco ----------
-$pdo = getDB();
 $protocolo = gerarProtocolo($pdo);
-
-// hash de IP apenas para controle anti-spam
-$ipHash = hash('sha256', ($ipReal ?: ($_SERVER['REMOTE_ADDR'] ?? '')) . date('Y-m-d'));
 
 $sql = "INSERT INTO denuncias (
     protocolo, empresa_id, identificado, nome,

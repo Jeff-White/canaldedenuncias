@@ -1,10 +1,16 @@
 <?php
 /** @var array $empresa */
 $opcoes = require __DIR__ . '/includes/opcoes.php';
-$corPrimaria = $empresa['cor_primaria'] ?: '#0d3b66';
-$corFundo = $empresa['cor_fundo'] ?: '#f4f6f9';
-$corTextoDestaque = $empresa['cor_texto_destaque'] ?: null;
-$logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
+
+// Validação estrita de cores (hex) para prevenir injeção CSS no style
+$corPrimaria = (isset($empresa['cor_primaria']) && preg_match('/^#[0-9a-fA-F]{3,8}$/', $empresa['cor_primaria'])) ? $empresa['cor_primaria'] : '#0d3b66';
+$corFundo = (isset($empresa['cor_fundo']) && preg_match('/^#[0-9a-fA-F]{3,8}$/', $empresa['cor_fundo'])) ? $empresa['cor_fundo'] : '#f4f6f9';
+$corTextoDestaque = (isset($empresa['cor_texto_destaque']) && preg_match('/^#[0-9a-fA-F]{3,8}$/', $empresa['cor_texto_destaque'])) ? $empresa['cor_texto_destaque'] : null;
+
+// Validação segura de link externo
+$urlSite = (!empty($empresa['url_site']) && preg_match('#^https?://#i', $empresa['url_site'])) ? $empresa['url_site'] : null;
+
+$logo = (!empty($empresa['logo_path']) && !preg_match('/\.\./', $empresa['logo_path'])) ? 'assets/logos/' . $empresa['logo_path'] : null;
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -12,22 +18,22 @@ $logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
-<title>Canal de Denúncias - <?= htmlspecialchars($empresa['nome']) ?></title>
+<title>Canal de Denúncias - <?= htmlspecialchars($empresa['nome'], ENT_QUOTES, 'UTF-8') ?></title>
 <link rel="stylesheet" href="assets/css/style.css">
 <style>:root{
-    --cor-primaria: <?= htmlspecialchars($corPrimaria) ?>;
-    --cor-fundo: <?= htmlspecialchars($corFundo) ?>;
-    <?php if ($corTextoDestaque): ?>--cor-texto-destaque: <?= htmlspecialchars($corTextoDestaque) ?>;<?php endif; ?>
+    --cor-primaria: <?= htmlspecialchars($corPrimaria, ENT_QUOTES, 'UTF-8') ?>;
+    --cor-fundo: <?= htmlspecialchars($corFundo, ENT_QUOTES, 'UTF-8') ?>;
+    <?php if ($corTextoDestaque): ?>--cor-texto-destaque: <?= htmlspecialchars($corTextoDestaque, ENT_QUOTES, 'UTF-8') ?>;<?php endif; ?>
 }</style>
 </head>
 <body>
 <div class="container">
     <header class="form-header">
         <?php if ($logo): ?>
-            <img src="<?= htmlspecialchars($logo) ?>" alt="<?= htmlspecialchars($empresa['nome']) ?>" class="logo">
+            <img src="<?= htmlspecialchars($logo, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($empresa['nome'], ENT_QUOTES, 'UTF-8') ?>" class="logo">
         <?php endif; ?>
         <h1>Canal de Denúncias</h1>
-        <p class="subtitulo"><?= htmlspecialchars($empresa['nome']) ?></p>
+        <p class="subtitulo"><?= htmlspecialchars($empresa['nome'], ENT_QUOTES, 'UTF-8') ?></p>
     </header>
 
     <div class="progress-bar" id="progressBar">
@@ -52,8 +58,15 @@ $logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
     <div id="formMessage" class="form-message" style="display:none;"></div>
 
     <form id="denunciaForm" action="submit.php" method="POST" enctype="multipart/form-data" novalidate>
-        <input type="hidden" name="empresa_slug" value="<?= htmlspecialchars($empresa['slug']) ?>">
+        <input type="hidden" name="empresa_slug" value="<?= htmlspecialchars($empresa['slug'], ENT_QUOTES, 'UTF-8') ?>">
         <input type="hidden" name="dispositivo_dados" id="dispositivoDados" value="">
+        <input type="hidden" name="_form_time" value="<?= time() ?>">
+
+        <!-- Proteção Anti-Spam (Honeypot) - Invisível a usuários legítimos -->
+        <div style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;opacity:0;" aria-hidden="true">
+            <label for="campo_website_hp">Não preencha este campo</label>
+            <input type="text" id="campo_website_hp" name="website_url" tabindex="-1" autocomplete="off" value="">
+        </div>
 
         <!-- ETAPA 1 - Identificação -->
         <section class="form-step active" data-step="1">
@@ -64,7 +77,7 @@ $logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
                 <div class="radio-group">
                     <?php foreach ($opcoes['sim_nao'] as $op): ?>
                         <label class="radio-option">
-                            <input type="radio" name="identificado" value="<?= $op ?>" required> <?= $op ?>
+                            <input type="radio" name="identificado" value="<?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?>" required> <?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?>
                         </label>
                     <?php endforeach; ?>
                 </div>
@@ -90,7 +103,7 @@ $logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
                 <select id="vinculo" name="vinculo" required>
                     <option value="">Selecione...</option>
                     <?php foreach ($opcoes['vinculo'] as $op): ?>
-                        <option value="<?= $op ?>"><?= $op ?></option>
+                        <option value="<?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -100,7 +113,7 @@ $logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
                 <select id="tipo_incidente" name="tipo_incidente" required>
                     <option value="">Selecione...</option>
                     <?php foreach ($opcoes['tipo_incidente'] as $op): ?>
-                        <option value="<?= $op ?>"><?= $op ?></option>
+                        <option value="<?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -120,7 +133,7 @@ $logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
                 <select id="como_soube" name="como_soube" required>
                     <option value="">Selecione...</option>
                     <?php foreach ($opcoes['como_soube'] as $op): ?>
-                        <option value="<?= $op ?>"><?= $op ?></option>
+                        <option value="<?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -134,7 +147,7 @@ $logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
                 <label>7. O diretor ou gerente da área onde ocorreu o fato denunciado tem conhecimento do ocorrido? <span class="req">*</span></label>
                 <div class="radio-group">
                     <?php foreach ($opcoes['sim_nao'] as $op): ?>
-                        <label class="radio-option"><input type="radio" name="gerente_ciente" value="<?= $op ?>" required> <?= $op ?></label>
+                        <label class="radio-option"><input type="radio" name="gerente_ciente" value="<?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?>" required> <?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?></label>
                     <?php endforeach; ?>
                 </div>
             </div>
@@ -143,7 +156,7 @@ $logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
                 <label>8. Os gestores da área onde ocorreu o fato denunciado participaram do fato? <span class="req">*</span></label>
                 <div class="radio-group">
                     <?php foreach ($opcoes['sim_nao'] as $op): ?>
-                        <label class="radio-option"><input type="radio" name="gestores_participaram" value="<?= $op ?>" required> <?= $op ?></label>
+                        <label class="radio-option"><input type="radio" name="gestores_participaram" value="<?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?>" required> <?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?></label>
                     <?php endforeach; ?>
                 </div>
             </div>
@@ -152,7 +165,7 @@ $logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
                 <label>9. Houve afastamentos recentes de colaboradores da área onde ocorreu o fato denunciado? <span class="req">*</span></label>
                 <div class="radio-group">
                     <?php foreach ($opcoes['sim_nao'] as $op): ?>
-                        <label class="radio-option"><input type="radio" name="afastamentos_recentes" value="<?= $op ?>" required> <?= $op ?></label>
+                        <label class="radio-option"><input type="radio" name="afastamentos_recentes" value="<?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?>" required> <?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?></label>
                     <?php endforeach; ?>
                 </div>
             </div>
@@ -166,7 +179,7 @@ $logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
                 <label>10. Há alta rotatividade de colaboradores na área onde ocorreu o fato denunciado? <span class="req">*</span></label>
                 <div class="radio-group">
                     <?php foreach ($opcoes['sim_nao'] as $op): ?>
-                        <label class="radio-option"><input type="radio" name="alta_rotatividade" value="<?= $op ?>" required> <?= $op ?></label>
+                        <label class="radio-option"><input type="radio" name="alta_rotatividade" value="<?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?>" required> <?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?></label>
                     <?php endforeach; ?>
                 </div>
             </div>
@@ -196,7 +209,7 @@ $logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
                 <label>14. Você já relatou esse fato denunciado a alguém dentro da empresa? <span class="req">*</span></label>
                 <div class="radio-group">
                     <?php foreach ($opcoes['sim_nao'] as $op): ?>
-                        <label class="radio-option"><input type="radio" name="ja_relatou" value="<?= $op ?>" required> <?= $op ?></label>
+                        <label class="radio-option"><input type="radio" name="ja_relatou" value="<?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?>" required> <?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?></label>
                     <?php endforeach; ?>
                 </div>
             </div>
@@ -205,7 +218,7 @@ $logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
                 <label>15. Você acredita que existam medidas ou políticas que poderiam ter prevenido o fato que você está denunciando? <span class="req">*</span></label>
                 <div class="radio-group">
                     <?php foreach ($opcoes['sim_nao'] as $op): ?>
-                        <label class="radio-option"><input type="radio" name="medidas_prevencao" value="<?= $op ?>" required> <?= $op ?></label>
+                        <label class="radio-option"><input type="radio" name="medidas_prevencao" value="<?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?>" required> <?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?></label>
                     <?php endforeach; ?>
                 </div>
             </div>
@@ -214,7 +227,7 @@ $logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
                 <label>16. Você considera que houve falha nos processos internos da Empresa que possa ter contribuído para o fato relatado na presente denúncia? <span class="req">*</span></label>
                 <div class="radio-group">
                     <?php foreach ($opcoes['sim_nao'] as $op): ?>
-                        <label class="radio-option"><input type="radio" name="falha_processos" value="<?= $op ?>" required> <?= $op ?></label>
+                        <label class="radio-option"><input type="radio" name="falha_processos" value="<?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?>" required> <?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?></label>
                     <?php endforeach; ?>
                 </div>
             </div>
@@ -223,7 +236,7 @@ $logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
                 <label>17. Você já procurou algum tipo de suporte ou orientação relacionada ao fato que você está denunciando? <span class="req">*</span></label>
                 <div class="radio-group">
                     <?php foreach ($opcoes['buscou_suporte'] as $op): ?>
-                        <label class="radio-option"><input type="radio" name="buscou_suporte" value="<?= $op ?>" required> <?= $op ?></label>
+                        <label class="radio-option"><input type="radio" name="buscou_suporte" value="<?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?>" required> <?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?></label>
                     <?php endforeach; ?>
                 </div>
             </div>
@@ -232,7 +245,7 @@ $logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
                 <label>18. Você sente necessidade de apoio psicológico pelo fato relatado? <span class="req">*</span></label>
                 <div class="radio-group">
                     <?php foreach ($opcoes['sim_nao'] as $op): ?>
-                        <label class="radio-option"><input type="radio" name="apoio_psicologico" value="<?= $op ?>" required> <?= $op ?></label>
+                        <label class="radio-option"><input type="radio" name="apoio_psicologico" value="<?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?>" required> <?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?></label>
                     <?php endforeach; ?>
                 </div>
             </div>
@@ -241,7 +254,7 @@ $logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
                 <label>19. Você já presenciou ou teve conhecimento de outras situações semelhantes a essa na empresa? <span class="req">*</span></label>
                 <div class="radio-group">
                     <?php foreach ($opcoes['presenciou_similar'] as $op): ?>
-                        <label class="radio-option"><input type="radio" name="presenciou_similar" value="<?= $op ?>" required> <?= $op ?></label>
+                        <label class="radio-option"><input type="radio" name="presenciou_similar" value="<?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?>" required> <?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?></label>
                     <?php endforeach; ?>
                 </div>
             </div>
@@ -258,7 +271,7 @@ $logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
                 <label>Você tem 60+ anos?</label>
                 <div class="radio-group">
                     <?php foreach ($opcoes['sim_nao'] as $op): ?>
-                        <label class="radio-option"><input type="radio" name="idade_60mais" value="<?= $op ?>"> <?= $op ?></label>
+                        <label class="radio-option"><input type="radio" name="idade_60mais" value="<?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?>"> <?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?></label>
                     <?php endforeach; ?>
                 </div>
                 <label class="checkbox-option">
@@ -272,7 +285,7 @@ $logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
                 <label>Gênero:</label>
                 <div class="radio-group">
                     <?php foreach ($opcoes['genero'] as $op): ?>
-                        <label class="radio-option"><input type="radio" name="genero" value="<?= $op ?>"> <?= $op ?></label>
+                        <label class="radio-option"><input type="radio" name="genero" value="<?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?>"> <?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?></label>
                     <?php endforeach; ?>
                 </div>
                 <label class="checkbox-option">
@@ -286,7 +299,7 @@ $logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
                 <label>Possui deficiência?</label>
                 <div class="radio-group">
                     <?php foreach ($opcoes['sim_nao'] as $op): ?>
-                        <label class="radio-option"><input type="radio" name="deficiencia" value="<?= $op ?>"> <?= $op ?></label>
+                        <label class="radio-option"><input type="radio" name="deficiencia" value="<?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?>"> <?= htmlspecialchars($op, ENT_QUOTES, 'UTF-8') ?></label>
                     <?php endforeach; ?>
                 </div>
                 <label class="checkbox-option">
@@ -298,8 +311,8 @@ $logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
         </section>
 
         <div class="form-nav">
-            <?php if (!empty($empresa['url_site'])): ?>
-                <a href="<?= htmlspecialchars($empresa['url_site']) ?>" class="btn btn-secundario btn-voltar-site">&larr; Voltar ao Site</a>
+            <?php if ($urlSite): ?>
+                <a href="<?= htmlspecialchars($urlSite, ENT_QUOTES, 'UTF-8') ?>" class="btn btn-secundario btn-voltar-site">&larr; Voltar ao Site</a>
             <?php endif; ?>
             <button type="button" id="btnAnterior" class="btn btn-secundario" style="display:none;">Voltar</button>
             <button type="button" id="btnProximo" class="btn btn-primario">Próximo</button>

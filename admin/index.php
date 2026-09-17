@@ -152,7 +152,7 @@ function badgeStatus(string $status): string {
                     <td><?= htmlspecialchars($d['tipo_incidente']) ?></td>
                     <td><?= htmlspecialchars($d['identificado']) ?></td>
                     <td><?= badgeStatus($d['status']) ?></td>
-                    <td><a href="view.php?id=<?= $d['id'] ?>">Ver detalhes</a></td>
+                    <td><a href="view.php?id=<?= (int)$d['id'] ?>">Ver detalhes</a></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
@@ -165,7 +165,7 @@ function badgeStatus(string $status): string {
                 $qs = $_GET;
                 $qs['pagina'] = $p;
             ?>
-            <a href="?<?= http_build_query($qs) ?>" class="<?= $p === $pagina ? 'ativo' : '' ?>"><?= $p ?></a>
+            <a href="?<?= htmlspecialchars(http_build_query($qs), ENT_QUOTES, 'UTF-8') ?>" class="<?= $p === $pagina ? 'ativo' : '' ?>"><?= $p ?></a>
         <?php endfor; ?>
     </div>
     <?php endif; ?>

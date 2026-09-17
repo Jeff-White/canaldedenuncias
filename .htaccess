@@ -3,9 +3,9 @@
 # Desabilita listagem de diretórios (autoindex)
 Options -Indexes
 
-# Bloqueia acesso direto a código-fonte, dumps e arquivos de configuração
+# Bloqueia acesso direto a código-fonte, dumps, backups e arquivos de configuração
 # (txt fica de fora para permitir o robots.txt)
-<FilesMatch "\.(sql|md|json|log|psftp|sh|bat|ini|yml|yaml|lock|example|dist|cdr|eps)$">
+<FilesMatch "\.(sql|md|json|log|psftp|sh|bat|ini|yml|yaml|lock|example|dist|cdr|eps|bak|old|swp|orig|tmp|temp|conf|config)$">
     Require all denied
 </FilesMatch>
 
@@ -20,6 +20,7 @@ Options -Indexes
     Header set X-Frame-Options "SAMEORIGIN"
     Header set Referrer-Policy "strict-origin-when-cross-origin"
     Header set X-XSS-Protection "1; mode=block"
+    Header set Permissions-Policy "geolocation=(), microphone=(), camera=()"
 
     # Impede indexação por buscadores e uso por IA em TODAS as respostas
     Header set X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate, noai, noimageai"

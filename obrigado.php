@@ -17,7 +17,8 @@ if (!$empresa) {
     die('Empresa não identificada.');
 }
 
-$logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
+$logo = (!empty($empresa['logo_path']) && !preg_match('/\.\./', $empresa['logo_path'])) ? 'assets/logos/' . $empresa['logo_path'] : null;
+$urlSite = (!empty($empresa['url_site']) && preg_match('#^https?://#i', $empresa['url_site'])) ? $empresa['url_site'] : null;
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -25,17 +26,17 @@ $logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
-<title>Denúncia enviada - <?= htmlspecialchars($empresa['nome']) ?></title>
+<title>Denúncia enviada - <?= htmlspecialchars($empresa['nome'], ENT_QUOTES, 'UTF-8') ?></title>
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 <div class="container" style="text-align:center;">
     <header class="form-header">
         <?php if ($logo): ?>
-            <img src="<?= htmlspecialchars($logo) ?>" alt="<?= htmlspecialchars($empresa['nome']) ?>" class="logo">
+            <img src="<?= htmlspecialchars($logo, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($empresa['nome'], ENT_QUOTES, 'UTF-8') ?>" class="logo">
         <?php endif; ?>
         <h1>Canal de Denúncias</h1>
-        <p class="subtitulo"><?= htmlspecialchars($empresa['nome']) ?></p>
+        <p class="subtitulo"><?= htmlspecialchars($empresa['nome'], ENT_QUOTES, 'UTF-8') ?></p>
     </header>
 
     <div class="form-message sucesso">
@@ -44,12 +45,12 @@ $logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
 
     <?php if ($protocolo): ?>
         <p>Guarde o número de protocolo abaixo caso precise acompanhar sua denúncia:</p>
-        <p style="font-size:1.4rem;font-weight:bold;letter-spacing:1px;color:var(--cor-primaria);"><?= htmlspecialchars($protocolo) ?></p>
+        <p style="font-size:1.4rem;font-weight:bold;letter-spacing:1px;color:var(--cor-primaria);"><?= htmlspecialchars($protocolo, ENT_QUOTES, 'UTF-8') ?></p>
     <?php endif; ?>
 
-    <?php if (!empty($empresa['url_site'])): ?>
+    <?php if ($urlSite): ?>
         <p style="margin-top:30px;">
-            <a href="<?= htmlspecialchars($empresa['url_site']) ?>" class="btn btn-primario">Ir para o Site</a>
+            <a href="<?= htmlspecialchars($urlSite, ENT_QUOTES, 'UTF-8') ?>" class="btn btn-primario">Ir para o Site</a>
         </p>
     <?php endif; ?>
 </div>

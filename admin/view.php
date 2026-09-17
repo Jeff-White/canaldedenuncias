@@ -31,8 +31,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 function linha(string $label, ?string $valor): string {
-    $valor = $valor === null || $valor === '' ? '-' : nl2br(htmlspecialchars($valor));
-    return '<div class="label">' . htmlspecialchars($label) . '</div><div class="valor">' . $valor . '</div>';
+    $valor = $valor === null || $valor === '' ? '-' : nl2br(htmlspecialchars($valor, ENT_QUOTES, 'UTF-8'));
+    return '<div class="label">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</div><div class="valor">' . $valor . '</div>';
 }
 ?>
 <!DOCTYPE html>
@@ -89,7 +89,7 @@ function linha(string $label, ?string $valor): string {
         <div class="label">12. Evidência anexada</div>
         <div class="valor">
             <?php if ($d['evidencia_path']): ?>
-                <a href="evidencia.php?id=<?= $d['id'] ?>" target="_blank">Ver/baixar arquivo</a>
+                <a href="evidencia.php?id=<?= (int)$d['id'] ?>" target="_blank" rel="noopener noreferrer">Ver/baixar arquivo</a>
             <?php else: ?>
                 -
             <?php endif; ?>
@@ -131,7 +131,7 @@ function linha(string $label, ?string $valor): string {
                 <?= linha('Data / Hora do Envio', date('d/m/Y H:i:s', strtotime($d['created_at']))) ?>
                 <div class="label" style="grid-column:1/-1;">User-Agent Completo da Máquina</div>
                 <div class="valor" style="grid-column:1/-1;font-family:monospace;font-size:0.8rem;word-break:break-all;background:#f8fafc;padding:8px 12px;border-radius:6px;border:1px solid #e2e8f0;">
-                    <?= htmlspecialchars($telemetria['user_agent_completo'] ?? $d['user_agent'] ?? '-') ?>
+                    <?= htmlspecialchars($telemetria['user_agent_completo'] ?? $d['user_agent'] ?? '-', ENT_QUOTES, 'UTF-8') ?>
                 </div>
             </div>
         <?php else: ?>
