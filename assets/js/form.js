@@ -145,7 +145,30 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // Ao apertar Enter em inputs de texto, avança para a próxima tela em vez de enviar o formulário
+    form.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.keyCode === 13) {
+            const tag = e.target.tagName.toLowerCase();
+            if (tag === 'textarea') {
+                return; // permite quebra de linha normal em áreas de texto
+            }
+            e.preventDefault();
+            if (currentStep < totalSteps) {
+                btnProximo.click();
+            } else {
+                btnEnviar.click();
+            }
+        }
+    });
+
     form.addEventListener('submit', function (e) {
+        // Se ainda não estiver na última etapa, não envia: apenas tenta avançar para a próxima
+        if (currentStep < totalSteps) {
+            e.preventDefault();
+            btnProximo.click();
+            return;
+        }
+
         if (!validarStep(currentStep)) {
             e.preventDefault();
             formMessage.style.display = 'block';

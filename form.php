@@ -328,6 +328,6 @@ $logo = (!empty($empresa['logo_path']) && !preg_match('/\.\./', $empresa['logo_p
     </form>
 </div>
 
-<script src="assets/js/form.js"></script>
+<script src="assets/js/form.js?v=<?= filemtime(__DIR__ . '/assets/js/form.js') ?>"></script>
 </body>
 </html>
