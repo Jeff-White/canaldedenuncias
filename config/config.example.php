@@ -27,5 +27,10 @@ define('UPLOAD_DIR', __DIR__ . '/../uploads/');
 // ----- Sessão / Dashboard -----
 define('SESSION_NAME', 'canal_denuncias_admin');
 
+// ----- Cloudflare Turnstile (Anti-bot / Anti-spam) -----
+define('TURNSTILE_SITE_KEY', '0x4AAAAAAE6-vm0eG5GaHGzr');
+define('TURNSTILE_SECRET_KEY', 'SEU_SECRET_KEY_AQUI');
+
 // ----- Timezone -----
 date_default_timezone_set('America/Sao_Paulo');
+

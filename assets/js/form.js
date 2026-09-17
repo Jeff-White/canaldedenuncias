@@ -108,17 +108,30 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!campoValido) valido = false;
         });
 
+        if (numero === 1 && valido) {
+            const turnstileInput = form.querySelector('[name="cf-turnstile-response"]');
+            if (!turnstileInput || !turnstileInput.value.trim()) {
+                formMessage.style.display = 'block';
+                formMessage.className = 'form-message erro';
+                formMessage.textContent = 'Por favor, conclua a verificação de segurança (Turnstile) antes de prosseguir.';
+                return false;
+            }
+        }
+
         return valido;
     }
 
     btnProximo.addEventListener('click', function () {
         if (!validarStep(currentStep)) {
-            formMessage.style.display = 'block';
-            formMessage.className = 'form-message erro';
-            formMessage.textContent = 'Por favor, preencha todos os campos obrigatórios desta etapa.';
+            if (!formMessage.textContent) {
+                formMessage.style.display = 'block';
+                formMessage.className = 'form-message erro';
+                formMessage.textContent = 'Por favor, preencha todos os campos obrigatórios desta etapa.';
+            }
             return;
         }
         formMessage.style.display = 'none';
+        formMessage.textContent = '';
         if (currentStep < totalSteps) {
             currentStep++;
             mostrarStep(currentStep);
@@ -137,7 +150,19 @@ document.addEventListener('DOMContentLoaded', function () {
             e.preventDefault();
             formMessage.style.display = 'block';
             formMessage.className = 'form-message erro';
-            formMessage.textContent = 'Por favor, preencha todos os campos obrigatórios desta etapa.';
+            if (!formMessage.textContent) {
+                formMessage.textContent = 'Por favor, preencha todos os campos obrigatórios desta etapa.';
+            }
+            return;
+        }
+
+        const turnstileInput = form.querySelector('[name="cf-turnstile-response"]');
+        if (!turnstileInput || !turnstileInput.value.trim()) {
+            e.preventDefault();
+            formMessage.style.display = 'block';
+            formMessage.className = 'form-message erro';
+            formMessage.textContent = 'Por favor, conclua a verificação de segurança (Turnstile) na primeira etapa antes de enviar.';
+            mostrarStep(1);
             return;
         }
 

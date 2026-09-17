@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/../includes/turnstile.php';
 
 $erro = null;
 $pdo = getDB();
@@ -10,10 +11,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!honeypotVazio()) {
         // bot preencheu o campo oculto — rejeita silenciosamente
         $erro = 'Não foi possível processar a solicitação.';
+    } elseif (!validarTurnstile($_POST['cf-turnstile-response'] ?? '', $_SERVER['REMOTE_ADDR'] ?? null)) {
+        $erro = 'Falha na verificação de segurança (Cloudflare Turnstile). Por favor, marque a caixa e tente novamente.';
     } elseif (loginBloqueado($pdo)) {
         $erro = 'Muitas tentativas de login. Tente novamente em alguns minutos.';
-    } elseif (!captchaValido()) {
-        $erro = 'Resposta da verificação incorreta. Tente novamente.';
     } else {
         $username = trim($_POST['username'] ?? '');
         $senha = $_POST['senha'] ?? '';
@@ -40,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <title>Login - Painel Canal de Denúncias</title>
 <link rel="stylesheet" href="../assets/css/style.css">
 <link rel="stylesheet" href="assets/dashboard.css">
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
 <div class="container" style="max-width:380px;margin-top:80px;">
@@ -47,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <h1 style="text-align:center;font-size:1.2rem;color:var(--cor-primaria);">Painel - Canal de Denúncias</h1>
 
     <?php if ($erro): ?>
-        <div class="form-message erro"><?= htmlspecialchars($erro) ?></div>
+        <div class="form-message erro"><?= htmlspecialchars($erro, ENT_QUOTES, 'UTF-8') ?></div>
     <?php endif; ?>
 
     <form method="POST">
@@ -64,7 +66,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <button type="button" class="toggle-senha" data-alvo="senha" aria-label="Mostrar senha">👁</button>
             </div>
         </div>
-        <?= captchaCampo() ?>
+        <div class="campo" style="display:flex;justify-content:center;margin:15px 0;">
+            <div class="cf-turnstile" data-sitekey="<?= htmlspecialchars(TURNSTILE_SITE_KEY, ENT_QUOTES, 'UTF-8') ?>" data-theme="light"></div>
+        </div>
         <button type="submit" class="btn btn-primario" style="width:100%;">Entrar</button>
         <a class="link-aux" href="esqueci.php">Esqueci minha senha</a>
     </form>

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/turnstile.php';
 require_once __DIR__ . '/includes/zeptomail.php';
 $opcoes = require __DIR__ . '/includes/opcoes.php';
 
@@ -75,6 +76,12 @@ $stmtRL->execute(['ip_hash' => $ipHash]);
 $enviosHora = (int)($stmtRL->fetch()['total'] ?? 0);
 if ($enviosHora >= 15) {
     erroSaida($empresa, 'Muitas tentativas de envio a partir da sua rede. Por favor, aguarde alguns minutos antes de tentar novamente.');
+}
+
+// ---------- Validação Cloudflare Turnstile ----------
+$turnstileToken = $_POST['cf-turnstile-response'] ?? '';
+if (!validarTurnstile($turnstileToken, $ipReal)) {
+    erroSaida($empresa, 'Falha na verificação de segurança (Cloudflare Turnstile). Por favor, retorne ao formulário e tente novamente.');
 }
 
 // ---------- Validação server-side dos campos ----------

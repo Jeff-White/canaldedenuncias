@@ -1,5 +1,6 @@
 <?php
 /** @var array $empresa */
+require_once __DIR__ . '/includes/turnstile.php';
 $opcoes = require __DIR__ . '/includes/opcoes.php';
 
 // Validação estrita de cores (hex) para prevenir injeção CSS no style
@@ -20,6 +21,7 @@ $logo = (!empty($empresa['logo_path']) && !preg_match('/\.\./', $empresa['logo_p
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <title>Canal de Denúncias - <?= htmlspecialchars($empresa['nome'], ENT_QUOTES, 'UTF-8') ?></title>
 <link rel="stylesheet" href="assets/css/style.css">
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <style>:root{
     --cor-primaria: <?= htmlspecialchars($corPrimaria, ENT_QUOTES, 'UTF-8') ?>;
     --cor-fundo: <?= htmlspecialchars($corFundo, ENT_QUOTES, 'UTF-8') ?>;
@@ -86,6 +88,11 @@ $logo = (!empty($empresa['logo_path']) && !preg_match('/\.\./', $empresa['logo_p
             <div class="campo condicional" data-show-if="identificado=Sim">
                 <label for="nome">Nome:</label>
                 <input type="text" id="nome" name="nome" maxlength="255">
+            </div>
+
+            <div class="campo" style="margin-top:22px;">
+                <label>Verificação de Segurança <span class="req">*</span></label>
+                <div class="cf-turnstile" data-sitekey="<?= htmlspecialchars(TURNSTILE_SITE_KEY, ENT_QUOTES, 'UTF-8') ?>" data-theme="light"></div>
             </div>
         </section>
 
