@@ -151,12 +151,100 @@ if (!empty($_FILES['evidencia']['name']) && $_FILES['evidencia']['error'] === UP
     $evidenciaPath = $empresa['slug'] . '/' . $nomeArquivo;
 }
 
+// ---------- Captura e identificação de IP e Máquina ----------
+function capturarIpCliente(): string {
+    $candidatos = [
+        'HTTP_CF_CONNECTING_IP',
+        'HTTP_X_FORWARDED_FOR',
+        'HTTP_X_REAL_IP',
+        'HTTP_CLIENT_IP',
+        'REMOTE_ADDR'
+    ];
+    foreach ($candidatos as $c) {
+        if (!empty($_SERVER[$c])) {
+            $lista = explode(',', $_SERVER[$c]);
+            foreach ($lista as $ip) {
+                $ip = trim($ip);
+                if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                    return $ip;
+                }
+            }
+        }
+    }
+    return $_SERVER['REMOTE_ADDR'] ?? '';
+}
+
+function identificarDispositivo(string $ua): array {
+    $os = 'Desconhecido';
+    $navegador = 'Desconhecido';
+    $tipo = 'Desktop / Computador';
+
+    if (preg_match('/windows nt 10\.0/i', $ua)) {
+        $os = 'Windows 10 / 11';
+    } elseif (preg_match('/windows nt 6\.3/i', $ua)) {
+        $os = 'Windows 8.1';
+    } elseif (preg_match('/windows nt 6\.1/i', $ua)) {
+        $os = 'Windows 7';
+    } elseif (preg_match('/macintosh|mac os x/i', $ua)) {
+        $os = 'macOS (Apple)';
+    } elseif (preg_match('/android/i', $ua)) {
+        $os = 'Android';
+        $tipo = 'Celular / Smartphone';
+    } elseif (preg_match('/iphone|ipad|ipod/i', $ua)) {
+        $os = 'iOS (iPhone / iPad)';
+        $tipo = preg_match('/ipad/i', $ua) ? 'Tablet' : 'Celular / Smartphone';
+    } elseif (preg_match('/linux/i', $ua)) {
+        $os = 'Linux';
+    }
+
+    if (preg_match('/edg\/([0-9\.]+)/i', $ua, $m)) {
+        $navegador = 'Microsoft Edge ' . $m[1];
+    } elseif (preg_match('/chrome\/([0-9\.]+)/i', $ua, $m)) {
+        $navegador = 'Google Chrome ' . $m[1];
+    } elseif (preg_match('/firefox\/([0-9\.]+)/i', $ua, $m)) {
+        $navegador = 'Mozilla Firefox ' . $m[1];
+    } elseif (preg_match('/safari\/([0-9\.]+)/i', $ua, $m) && !preg_match('/chrome/i', $ua)) {
+        $navegador = 'Apple Safari ' . $m[1];
+    } elseif (preg_match('/opr\/([0-9\.]+)/i', $ua, $m)) {
+        $navegador = 'Opera ' . $m[1];
+    }
+
+    return ['os' => $os, 'navegador' => $navegador, 'tipo' => $tipo];
+}
+
+$ipReal = capturarIpCliente();
+$userAgent = trim($_SERVER['HTTP_USER_AGENT'] ?? '');
+$parsedDisp = identificarDispositivo($userAgent);
+$reverseHost = $ipReal ? @gethostbyaddr($ipReal) : '';
+
+$rawDisp = trim($_POST['dispositivo_dados'] ?? '');
+$dispFront = json_decode($rawDisp, true) ?: [];
+
+$infoDispositivo = [
+    'ip' => $ipReal,
+    'hostname_reverso' => ($reverseHost && $reverseHost !== $ipReal) ? $reverseHost : null,
+    'sistema_operacional' => $parsedDisp['os'],
+    'navegador' => $parsedDisp['navegador'],
+    'tipo_dispositivo' => $parsedDisp['tipo'],
+    'resolucao' => $dispFront['resolucao'] ?? null,
+    'janela' => $dispFront['janela'] ?? null,
+    'fuso_horario' => $dispFront['fuso_horario'] ?? null,
+    'idioma' => $dispFront['idioma'] ?? ($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? null),
+    'plataforma' => $dispFront['plataforma'] ?? null,
+    'cores_cpu' => $dispFront['cores_cpu'] ?? null,
+    'memoria_ram' => $dispFront['memoria_ram'] ?? null,
+    'tela_touch' => $dispFront['touch'] ?? null,
+    'user_agent_completo' => $userAgent,
+    'data_envio' => date('d/m/Y H:i:s'),
+];
+$dispositivoInfoJson = json_encode($infoDispositivo, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
 // ---------- Gravação no banco ----------
 $pdo = getDB();
 $protocolo = gerarProtocolo($pdo);
 
-// hash de IP apenas para controle anti-spam, não permite identificar o autor
-$ipHash = hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . date('Y-m-d'));
+// hash de IP apenas para controle anti-spam
+$ipHash = hash('sha256', ($ipReal ?: ($_SERVER['REMOTE_ADDR'] ?? '')) . date('Y-m-d'));
 
 $sql = "INSERT INTO denuncias (
     protocolo, empresa_id, identificado, nome,
@@ -165,7 +253,7 @@ $sql = "INSERT INTO denuncias (
     alta_rotatividade, descricao_rotatividade, testemunhas, evidencia_path, sugestoes,
     ja_relatou, medidas_prevencao, falha_processos, buscou_suporte, apoio_psicologico, presenciou_similar,
     idade_60mais, consentimento_idade, genero, consentimento_genero, deficiencia, consentimento_deficiencia,
-    ip_hash
+    ip_hash, ip_origem, user_agent, dispositivo_info
 ) VALUES (
     :protocolo, :empresa_id, :identificado, :nome,
     :empresa_fato, :vinculo, :tipo_incidente, :filial_departamento, :resumo_fato, :como_soube,
@@ -173,7 +261,7 @@ $sql = "INSERT INTO denuncias (
     :alta_rotatividade, :descricao_rotatividade, :testemunhas, :evidencia_path, :sugestoes,
     :ja_relatou, :medidas_prevencao, :falha_processos, :buscou_suporte, :apoio_psicologico, :presenciou_similar,
     :idade_60mais, :consentimento_idade, :genero, :consentimento_genero, :deficiencia, :consentimento_deficiencia,
-    :ip_hash
+    :ip_hash, :ip_origem, :user_agent, :dispositivo_info
 )";
 
 $stmt = $pdo->prepare($sql);
@@ -210,6 +298,9 @@ $stmt->execute([
     'deficiencia' => $deficiencia,
     'consentimento_deficiencia' => $consentimentoDeficiencia,
     'ip_hash' => $ipHash,
+    'ip_origem' => $ipReal ?: null,
+    'user_agent' => $userAgent ?: null,
+    'dispositivo_info' => $dispositivoInfoJson,
 ]);
 
 // ---------- Notificação por e-mail ----------
@@ -237,6 +328,7 @@ $dadosEmail = [
     'buscou_suporte' => $buscouSuporte,
     'apoio_psicologico' => $apoioPsicologico,
     'presenciou_similar' => $presenciouSimilar,
+    'dispositivo' => $infoDispositivo,
 ];
 
 $corpoEmail = montarEmailNotificacao($dadosEmail, $empresa['nome'], $protocolo);

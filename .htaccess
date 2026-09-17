@@ -4,7 +4,8 @@
 Options -Indexes
 
 # Bloqueia acesso direto a código-fonte, dumps e arquivos de configuração
-<FilesMatch "\.(sql|md|json|log|psftp|sh|bat|ini|yml|yaml|lock|example|dist|cdr|eps|txt)$">
+# (txt fica de fora para permitir o robots.txt)
+<FilesMatch "\.(sql|md|json|log|psftp|sh|bat|ini|yml|yaml|lock|example|dist|cdr|eps)$">
     Require all denied
 </FilesMatch>
 
@@ -13,10 +14,22 @@ Options -Indexes
     Require all denied
 </FilesMatch>
 
-# Cabeçalhos de segurança
+# Cabeçalhos de segurança + bloqueio de indexação
 <IfModule mod_headers.c>
     Header set X-Content-Type-Options "nosniff"
     Header set X-Frame-Options "SAMEORIGIN"
     Header set Referrer-Policy "strict-origin-when-cross-origin"
     Header set X-XSS-Protection "1; mode=block"
+
+    # Impede indexação por buscadores e uso por IA em TODAS as respostas
+    Header set X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate, noai, noimageai"
+</IfModule>
+
+# Bloqueia user-agents de buscadores/IA/scrapers conhecidos (defesa adicional)
+<IfModule mod_setenvif.c>
+    SetEnvIfNoCase User-Agent "(GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|Claude-Web|anthropic-ai|CCBot|Google-Extended|GoogleOther|PerplexityBot|Perplexity-User|Amazonbot|Applebot-Extended|Bytespider|Bytedance|Diffbot|FacebookBot|Meta-ExternalAgent|cohere-ai|Omgili|ImagesiftBot|YouBot|Timpibot|Webzio|Scrapy|python-requests|MJ12bot|AhrefsBot|SemrushBot|DotBot|DataForSeoBot|magpie-crawler)" bot_bloqueado
+    <RequireAll>
+        Require all granted
+        Require not env bot_bloqueado
+    </RequireAll>
 </IfModule>

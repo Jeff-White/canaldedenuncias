@@ -32,11 +32,11 @@ body { padding: 20px; }
 }
 
 .topbar .brand-logo {
-    height: 30px;
+    height: 20px;
     width: auto;
     background: #fff;
-    padding: 6px 11px;
-    border-radius: 8px;
+    padding: 5px 9px;
+    border-radius: 7px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.12);
 }
 
@@ -84,17 +84,79 @@ body { padding: 20px; }
     background: var(--sw-vermelho);
 }
 
+/* Item ativo: pílula branca com texto azul, sem sumir do menu */
+.menu-admin a.ativo {
+    background: #fff;
+    color: var(--sw-azul-escuro);
+}
+
+.menu-admin a.ativo:hover {
+    background: #fff;
+}
+
 /* Logo na tela de login/recuperação */
 .login-logo {
     display: block;
-    max-width: 210px;
-    width: 100%;
+    width: 250px;
+    max-width: 80%;
     height: auto;
-    margin: 4px auto 20px;
+    margin: 4px auto 18px;
+}
+
+/* ----- Responsivo (mobile) ----- */
+@media (max-width: 640px) {
+    body { padding: 12px; }
+    .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 12px 14px;
+    }
+    .topbar .user-info {
+        width: 100%;
+    }
+    .menu-admin {
+        margin-left: 0;
+        margin-top: 6px;
+        width: 100%;
+    }
+    .menu-admin a {
+        padding: 8px 12px;
+    }
+    .filtros { gap: 10px; }
+    .filtros .campo { min-width: 100%; }
+    .detalhe-grid {
+        grid-template-columns: 1fr;
+    }
+    .detalhe-grid .label {
+        border-bottom: none;
+    }
+    table.denuncias { font-size: 0.8rem; }
+    table.denuncias th, table.denuncias td { padding: 6px 7px; }
 }
 
 .form-usuario {
     max-width: 480px;
+}
+
+/* ----- Empresas / links ----- */
+.tabela-empresas input.campo-codigo,
+.tabela-empresas input.campo-link {
+    width: 100%;
+    padding: 7px 9px;
+    font-size: 0.85rem;
+}
+.tabela-empresas input.campo-link {
+    background: #f5f7fa;
+    color: #333;
+}
+.acoes-empresa {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.btn-mini {
+    padding: 7px 12px;
+    font-size: 0.8rem;
 }
 
 .filtros {

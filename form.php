@@ -11,6 +11,7 @@ $logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <title>Canal de Denúncias - <?= htmlspecialchars($empresa['nome']) ?></title>
 <link rel="stylesheet" href="assets/css/style.css">
 <style>:root{
@@ -52,6 +53,7 @@ $logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
 
     <form id="denunciaForm" action="submit.php" method="POST" enctype="multipart/form-data" novalidate>
         <input type="hidden" name="empresa_slug" value="<?= htmlspecialchars($empresa['slug']) ?>">
+        <input type="hidden" name="dispositivo_dados" id="dispositivoDados" value="">
 
         <!-- ETAPA 1 - Identificação -->
         <section class="form-step active" data-step="1">

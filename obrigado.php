@@ -1,9 +1,16 @@
 <?php
 require_once __DIR__ . '/includes/db.php';
 
+$par = isset($_GET['par']) ? preg_replace('/[^a-zA-Z0-9_-]/', '', $_GET['par']) : '';
 $slug = isset($_GET['empresa']) ? preg_replace('/[^a-z0-9_-]/i', '', $_GET['empresa']) : '';
-$empresa = $slug ? getEmpresaBySlug($slug) : null;
 $protocolo = isset($_GET['protocolo']) ? preg_replace('/[^A-Z0-9-]/', '', $_GET['protocolo']) : '';
+
+$empresa = null;
+if ($par !== '') {
+    $empresa = getEmpresaByParam($par);
+} elseif ($slug !== '') {
+    $empresa = getEmpresaBySlug($slug);
+}
 
 if (!$empresa) {
     http_response_code(404);
@@ -17,6 +24,7 @@ $logo = $empresa['logo_path'] ? 'assets/logos/' . $empresa['logo_path'] : null;
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <title>Denúncia enviada - <?= htmlspecialchars($empresa['nome']) ?></title>
 <link rel="stylesheet" href="assets/css/style.css">
 </head>

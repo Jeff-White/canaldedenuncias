@@ -55,26 +55,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <title>Meus dados - Painel Canal de Denúncias</title>
 <link rel="stylesheet" href="../assets/css/style.css">
 <link rel="stylesheet" href="assets/dashboard.css">
 </head>
 <body>
-<div class="container" style="max-width:480px;">
+<div class="container wide">
     <div class="topbar">
         <div class="topbar-brand">
             <img src="assets/logo-smartweb.svg" alt="Smartweb" class="brand-logo">
             <h1>Meus dados</h1>
         </div>
         <div class="user-info">
-            <nav class="menu-admin">
-                <a href="index.php">Denúncias</a>
-                <?php if (ehAdmin($usuario)): ?><a href="usuarios.php">Usuários</a><a href="emails.php">E-mails</a><?php endif; ?>
-                <a href="logout.php">Sair</a>
-            </nav>
+            Olá, <?= htmlspecialchars($usuario['nome']) ?>
+            <?= renderMenuAdmin($usuario, 'perfil.php') ?>
         </div>
     </div>
 
+    <div class="form-usuario">
     <?php if ($msg): ?><div class="form-message sucesso"><?= htmlspecialchars($msg) ?></div><?php endif; ?>
     <?php if ($erro): ?><div class="form-message erro"><?= htmlspecialchars($erro) ?></div><?php endif; ?>
 
@@ -106,6 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <button type="submit" class="btn btn-primario">Salvar</button>
     </form>
+    </div>
 </div>
 </body>
 </html>

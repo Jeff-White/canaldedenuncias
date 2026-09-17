@@ -11,7 +11,22 @@ require_once __DIR__ . '/../config/config.php';
  */
 function enviarEmailZepto($to, string $subject, string $htmlBody): bool {
     if (is_string($to)) {
-        $to = array_map('trim', explode(',', $to));
+        $to = preg_split('/[\s,;]+/', trim($to), -1, PREG_SPLIT_NO_EMPTY);
+    } elseif (!is_array($to)) {
+        $to = [];
+    }
+
+    $validEmails = [];
+    foreach ($to as $email) {
+        $email = trim((string)$email);
+        if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) && !in_array($email, $validEmails, true)) {
+            $validEmails[] = $email;
+        }
+    }
+
+    if (empty($validEmails)) {
+        error_log('Zeptomail error: nenhum destinatário válido fornecido.');
+        return false;
     }
 
     $toList = array_map(function ($email) {
@@ -20,7 +35,7 @@ function enviarEmailZepto($to, string $subject, string $htmlBody): bool {
                 'address' => $email,
             ],
         ];
-    }, $to);
+    }, $validEmails);
 
     $payload = [
         'from' => [
@@ -101,12 +116,42 @@ function montarEmailNotificacao(array $dados, string $empresaNome, string $proto
 
     $evidencia = !empty($dados['evidencia_path']) ? '<p>Evidência anexada pelo denunciante (ver dashboard).</p>' : '';
 
+    // Dados de auditoria da máquina / conexão
+    $tabelaDispositivo = '';
+    if (!empty($dados['dispositivo']) && is_array($dados['dispositivo'])) {
+        $disp = $dados['dispositivo'];
+        $camposTecnicos = [
+            'IP de Origem' => $disp['ip'] ?? null,
+            'Hostname / Provedor' => $disp['hostname_reverso'] ?? null,
+            'Sistema Operacional' => $disp['sistema_operacional'] ?? null,
+            'Navegador' => $disp['navegador'] ?? null,
+            'Tipo de Dispositivo' => $disp['tipo_dispositivo'] ?? null,
+            'Resolução de Tela' => $disp['resolucao'] ?? null,
+            'Fuso Horário' => $disp['fuso_horario'] ?? null,
+            'Idioma' => $disp['idioma'] ?? null,
+            'Processador (Cores)' => $disp['cores_cpu'] ?? null,
+            'Memória Estimada' => $disp['memoria_ram'] ?? null,
+            'Data/Hora de Envio' => $disp['data_envio'] ?? null,
+            'User-Agent Completo' => $disp['user_agent_completo'] ?? null,
+        ];
+        $linhasDispRows = '';
+        foreach ($camposTecnicos as $rotulo => $valTec) {
+            if ($valTec !== null && $valTec !== '') {
+                $linhasDispRows .= "<tr><td style='padding:5px 9px;font-weight:bold;border:1px solid #e2e8f0;background:#f8fafc;width:240px;vertical-align:top;font-size:12px;color:#475569;'>{$esc($rotulo)}</td><td style='padding:5px 9px;border:1px solid #e2e8f0;font-size:12px;font-family:monospace;word-break:break-all;'>{$esc($valTec)}</td></tr>";
+            }
+        }
+        if ($linhasDispRows !== '') {
+            $tabelaDispositivo = "<h3 style='margin-top:24px;margin-bottom:8px;font-size:13px;color:#0d3b66;text-transform:uppercase;letter-spacing:0.5px;'>Dados Técnicos da Máquina e Conexão</h3><table style='border-collapse:collapse;width:100%;max-width:700px;'>{$linhasDispRows}</table>";
+        }
+    }
+
     return "
         <div style='font-family:Arial,sans-serif;font-size:14px;color:#333;'>
             <h2>Nova denúncia recebida - {$empresaNome}</h2>
             <p>Protocolo: <strong>{$protocolo}</strong></p>
             <table style='border-collapse:collapse;width:100%;max-width:700px;'>{$rows}</table>
             {$evidencia}
+            {$tabelaDispositivo}
             <p style='margin-top:20px;color:#777;font-size:12px;'>Este e-mail foi gerado automaticamente pelo Canal de Denúncias.</p>
         </div>
     ";

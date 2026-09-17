@@ -77,6 +77,7 @@ function badgeStatus(string $status): string {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <title>Dashboard - Canal de Denúncias</title>
 <link rel="stylesheet" href="../assets/css/style.css">
 <link rel="stylesheet" href="assets/dashboard.css">
@@ -90,14 +91,7 @@ function badgeStatus(string $status): string {
         </div>
         <div class="user-info">
             Olá, <?= htmlspecialchars($usuario['nome']) ?>
-            <nav class="menu-admin">
-                <a href="perfil.php">Meus dados</a>
-                <?php if (ehAdmin($usuario)): ?>
-                    <a href="usuarios.php">Usuários</a>
-                    <a href="emails.php">E-mails</a>
-                <?php endif; ?>
-                <a href="logout.php">Sair</a>
-            </nav>
+            <?= renderMenuAdmin($usuario, 'index.php') ?>
         </div>
     </div>
 

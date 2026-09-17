@@ -20,7 +20,7 @@ INSERT INTO empresas (slug, parametro, nome, logo_path, email_destino, cor_prima
 ('alibras',   'GHB3SD', 'Alibras',    'alibras.svg',   'jeff@smartweb.com.br', '#737F67', '#FFF8DD', NULL),
 ('valobras',  'UWCDLR', 'Valobras',   'valobras.png',  'jeff@smartweb.com.br', '#2F6B3A', '#F5EFE0', NULL),
 ('agatha',    'LEDXI1', 'Agatha Motel','agatha.png',   'jeff@smartweb.com.br', '#5D4037', '#F5EBDD', '#5D4037'),
-('aliservice','XAZKL2', 'AliService', 'aliservice.png','jeff@smartweb.com.br', '#0d3b66', '#f4f6f9', NULL),
+('aliservice','XAZKL2', 'AliService', 'aliservice.png','jeff@smartweb.com.br', '#164E78', '#EEF3F8', NULL),
 ('alicafe',   'VU9GD0', 'Alicafé',    'alicafe.png',   'jeff@smartweb.com.br', '#0d3b66', '#f4f6f9', NULL);
 
 -- Tabela principal de denúncias
@@ -68,7 +68,10 @@ CREATE TABLE IF NOT EXISTS denuncias (
   consentimento_deficiencia TINYINT(1) DEFAULT 0,
 
   -- Metadados
-  ip_hash VARCHAR(64) DEFAULT NULL,  -- hash do IP apenas para anti-spam, não identifica o autor
+  ip_hash VARCHAR(64) DEFAULT NULL,  -- hash do IP para anti-spam
+  ip_origem VARCHAR(45) DEFAULT NULL, -- IP real de envio (IPv4 ou IPv6)
+  user_agent TEXT DEFAULT NULL,       -- Navegador e sistema operacional
+  dispositivo_info TEXT DEFAULT NULL, -- Telemetria detalhada da máquina (resolução, timezone, etc.)
   status ENUM('Novo','Em análise','Concluído') NOT NULL DEFAULT 'Novo',
 
   FOREIGN KEY (empresa_id) REFERENCES empresas(id)

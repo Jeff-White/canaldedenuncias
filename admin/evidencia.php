@@ -27,7 +27,11 @@ if (!$caminho || strpos($caminho, $baseDir) !== 0 || !is_file($caminho)) {
 }
 
 $mime = mime_content_type($caminho) ?: 'application/octet-stream';
+header('X-Content-Type-Options: nosniff');
+header('X-Robots-Tag: noindex, nofollow, noarchive, nosnippet, noimageindex');
+header('Cache-Control: private, no-cache, no-store, must-revalidate');
 header('Content-Type: ' . $mime);
 header('Content-Length: ' . filesize($caminho));
 header('Content-Disposition: inline; filename="' . basename($caminho) . '"');
 readfile($caminho);
+exit;

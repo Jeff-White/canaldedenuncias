@@ -140,6 +140,25 @@ document.addEventListener('DOMContentLoaded', function () {
             formMessage.textContent = 'Por favor, preencha todos os campos obrigatórios desta etapa.';
             return;
         }
+
+        // Captura o máximo de dados técnicos da máquina e ambiente
+        try {
+            const info = {
+                resolucao: (window.screen ? window.screen.width + 'x' + window.screen.height : ''),
+                janela: (window.innerWidth + 'x' + window.innerHeight),
+                fuso_horario: (Intl && Intl.DateTimeFormat ? Intl.DateTimeFormat().resolvedOptions().timeZone : ''),
+                idioma: (navigator.language || navigator.userLanguage || ''),
+                plataforma: (navigator.platform || ''),
+                cores_cpu: (navigator.hardwareConcurrency || ''),
+                memoria_ram: (navigator.deviceMemory ? navigator.deviceMemory + ' GB' : ''),
+                touch: (navigator.maxTouchPoints > 0 ? 'Sim' : 'Não')
+            };
+            const inputDispositivo = document.getElementById('dispositivoDados');
+            if (inputDispositivo) {
+                inputDispositivo.value = JSON.stringify(info);
+            }
+        } catch (err) {}
+
         btnEnviar.disabled = true;
         btnEnviar.textContent = 'Enviando...';
     });

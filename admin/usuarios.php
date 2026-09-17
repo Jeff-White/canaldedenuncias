@@ -71,6 +71,7 @@ $usuarios = $pdo->query('SELECT id, username, nivel, nome, ativo, created_at FRO
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <title>Usuários - Painel Canal de Denúncias</title>
 <link rel="stylesheet" href="../assets/css/style.css">
 <link rel="stylesheet" href="assets/dashboard.css">
@@ -83,12 +84,8 @@ $usuarios = $pdo->query('SELECT id, username, nivel, nome, ativo, created_at FRO
             <h1>Gerenciar Usuários</h1>
         </div>
         <div class="user-info">
-            <nav class="menu-admin">
-                <a href="index.php">Denúncias</a>
-                <a href="emails.php">E-mails</a>
-                <a href="perfil.php">Meus dados</a>
-                <a href="logout.php">Sair</a>
-            </nav>
+            Olá, <?= htmlspecialchars($usuario['nome']) ?>
+            <?= renderMenuAdmin($usuario, 'usuarios.php') ?>
         </div>
     </div>
 

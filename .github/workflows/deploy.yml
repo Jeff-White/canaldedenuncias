@@ -1,0 +1,34 @@
+﻿name: Deploy para DreamHost
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  deploy:
+    name: Publicar no Servidor DreamHost
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar código do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar chave SSH de deploy
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DH_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.DH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Sincronizar arquivos via rsync
+        run: |
+          rsync -avz --delete \
+            --exclude=".git/" \
+            --exclude=".github/" \
+            --exclude="config/config.php" \
+            --exclude="uploads/*" \
+            --exclude="*.psftp" \
+            -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=accept-new" \
+            ./ "${{ secrets.DH_USERNAME }}@${{ secrets.DH_HOST }}:${{ secrets.DH_TARGET_DIR }}/"

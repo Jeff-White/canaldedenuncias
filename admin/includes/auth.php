@@ -43,6 +43,31 @@ function exigirAdmin(): array {
     return $user;
 }
 
+/**
+ * Renderiza o menu do painel (igual em todas as páginas),
+ * destacando a página ativa em vez de ocultá-la.
+ */
+function renderMenuAdmin(array $usuario, string $ativo): string {
+    $itens = [
+        'index.php'    => ['Denúncias',  false],
+        'empresas.php' => ['Empresas',   true],
+        'usuarios.php' => ['Usuários',   true],
+        'emails.php'   => ['E-mails',    true],
+        'perfil.php'   => ['Meus dados', false],
+    ];
+    $html = '<nav class="menu-admin">';
+    foreach ($itens as $arquivo => $info) {
+        if ($info[1] && !ehAdmin($usuario)) {
+            continue;
+        }
+        $cls = $arquivo === $ativo ? ' class="ativo"' : '';
+        $html .= '<a href="' . $arquivo . '"' . $cls . '>' . htmlspecialchars($info[0]) . '</a>';
+    }
+    $html .= '<a href="logout.php" class="sair">Sair</a>';
+    $html .= '</nav>';
+    return $html;
+}
+
 // ---------- CSRF ----------
 function csrfToken(): string {
     if (empty($_SESSION['csrf_token'])) {
@@ -92,12 +117,14 @@ function honeypotVazio(): bool {
     return trim((string)($_POST['website'] ?? '')) === '';
 }
 
-// ---------- URL base (para montar links absolutos em e-mails) ----------
+// ---------- URL base (para montar links absolutos em e-mails e telas) ----------
 function baseUrl(): string {
     $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
         || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'] ?? 'canaldedenuncias.smartwebhosted.com';
-    return $proto . '://' . $host;
+    $dir = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+    $dir = preg_replace('#/admin.*$#', '', $dir);
+    return $proto . '://' . $host . $dir;
 }
 
 // ---------- Recuperação de senha (tokens) ----------
